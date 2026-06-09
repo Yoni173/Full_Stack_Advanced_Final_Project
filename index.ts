@@ -1,21 +1,40 @@
 import express from 'express';
 import cors from 'cors';
+import mongoose from 'mongoose';
+import * as dotenv from 'dotenv';
+import authRoutes from './routes/authRoutes';
 
-// יצירת מופע של השרת וניהול בקשות האינטרנט
+// טעינת משתני הסביבה מקובץ .env לתוך התוכנית
+dotenv.config();
+
 const app = express();
 
-// הפעלת מנגנון CORS המאפשר ל-Frontend להתחבר לשרת ללא חסימות אבטחה
+// הפעלת מנגנון CORS לאישור גישה מה-Frontend
 app.use(cors());
+// הגדרת יישום ביניים לקריאת בקשות המכילות מידע בפורמט JSON
+app.use(express.json());
 
-// הגדרת נתיב ראשי (נקודת קצה) מסוג GET המחזירה הודעת טקסט לדפדפן
+// חיבור נתיבי האימות של האפליקציה תחת תחילית קבועה של API
+app.use('/api/auth', authRoutes);
+
+// הגדרת נתיב בדיקה ראשי לשרת
 app.get('/', (req, res) => {
     res.send('Welcome to Crypto Simulator Backend! 🚀');
 });
 
-// הגדרת מספר הפורט (הנתיב הייעודי) שבו השרת יקשיב לתקשורת
-const PORT = 5001;
+// שליפת הפורט מתוך קובץ ה-env, או שימוש ב-5001 כברירת מחדל
+const PORT = process.env.PORT || 5001;
+// שליפת מחרוזת החיבור למסד הנתונים מתוך קובץ ה-env
+const MONGO_URI = process.env.MONGO_URI || '';
 
-// הפעלת השרת בפועל והשארתו במצב האזנה לבקשות נכנסות
-app.listen(PORT, () => {
-    console.log(`Server is running successfully on port ${PORT}`);
-});
+// התחברות למסד הנתונים MongoDB והפעלת האזנה של השרת רק לאחר חיבור מוצלח
+mongoose.connect(MONGO_URI)
+    .then(() => {
+        console.log('Successfully connected to MongoDB 🍃');
+        app.listen(PORT, () => {
+            console.log(`Server is running successfully on port ${PORT}`);
+        });
+    })
+    .catch((err) => {
+        console.error('Database connection error:', err);
+    });
