@@ -1,3 +1,4 @@
+# 1. בדיקת הרשמה (Register) - יוצרת משתמש חדש במערכת
 POST http://localhost:5001/api/auth/register
 Content-Type: application/json
 
@@ -5,4 +6,32 @@ Content-Type: application/json
   "username": "YonatanTest",
   "email": "yonatan@test.com",
   "password": "password123"
+}
+
+###
+
+# 2. בדיקת התחברות (Login) - מחזירה את הטוקן המאובטח (JWT)
+POST http://localhost:5001/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "yonatan@test.com",
+  "password": "password123"
+}
+
+###
+
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTI4N2M0OGE2YmQ3MjYyMzRjYzEwMDEiLCJ1c2VybmFtZSI6IllvbmF0YW5UZXN0IiwiaWF0IjoxNzgxMjczMTk0LCJleHAiOjE3ODEzMTYzOTR9.1527UjZ6lgZnXB4TbdolOwY9ds6oPJn5JNkS5QMwIPA
+
+# 3. בדיקת קניית מטבע (Buy Asset) - נתיב מוגן הדורש את הטוקן
+POST http://localhost:5001/api/crypto/buy
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "coinId": "bitcoin",
+  "symbol": "btc",
+  "name": "Bitcoin",
+  "quantity": 0.5,
+  "purchasePrice": 65000
 }

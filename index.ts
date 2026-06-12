@@ -3,6 +3,7 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import * as dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
+import cryptoRoutes from './routes/cryptoRoutes'; // ייבוא נתיבי הקריפטו החדשים
 
 // טעינת משתני הסביבה מקובץ .env לתוך התוכנית
 dotenv.config();
@@ -16,6 +17,9 @@ app.use(express.json());
 
 // חיבור נתיבי האימות של האפליקציה תחת תחילית קבועה של API
 app.use('/api/auth', authRoutes);
+
+// חיבור נתיבי הקריפטו והסימולטור תחת תחילית קבועה של API
+app.use('/api/crypto', cryptoRoutes);
 
 // הגדרת נתיב בדיקה ראשי לשרת
 app.get('/', (req, res) => {
