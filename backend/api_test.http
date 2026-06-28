@@ -1,0 +1,55 @@
+# 1. בדיקת הרשמה (Register) - יוצרת משתמש חדש במערכת
+POST http://localhost:5001/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "YonatanTest",
+  "email": "yonatan@test.com",
+  "password": "password123"
+}
+
+###
+
+# 2. בדיקת התחברות (Login) - מחזירה את הטוקן המאובטח (JWT)
+POST http://localhost:5001/api/auth/login
+Content-Type: application/json
+
+{
+  "email: "yonatan@test.com",
+  "password": "password123"
+}
+
+###
+
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTI4N2M0OGE2YmQ3MjYyMzRjYzEwMDEiLCJ1c2VybmFtZSI6IllvbmF0YW5UZXN0IiwiaWF0IjoxNzgxNTAyNDU3LCJleHAiOjE3ODE1NDU2NTd9.rIx5Bh7609WgAxneUWV61NO2tZ5diDE5zu2qPmZEi3o
+
+# 3. בדיקת קניית מטבע (Buy Asset) - נתיב מוגן הדורש את הטוקן
+POST http://localhost:5001/api/crypto/buy
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "coinId": "bitcoin",
+  "symbol": "btc",
+  "name": "Bitcoin",
+  "quantity": 0.1
+}
+
+###
+
+# 4. בדיקת צפייה בתיק ההשקעות (Get Portfolio) - פעולת Read מוגנת
+GET http://localhost:5001/api/crypto/portfolio
+Authorization: Bearer {{token}}
+
+
+###
+
+# 5. בדיקת מכירת מטבע (Sell Asset) - פעולת Update/Delete מוגנת
+POST http://localhost:5001/api/crypto/sell
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "coinId": "bitcoin",
+  "quantity": 0.3
+}
