@@ -15,13 +15,13 @@ POST http://localhost:5001/api/auth/login
 Content-Type: application/json
 
 {
-  "email: "yonatan@test.com",
+  "email": "yonatan@test.com",
   "password": "password123"
 }
 
 ###
 
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTI4N2M0OGE2YmQ3MjYyMzRjYzEwMDEiLCJ1c2VybmFtZSI6IllvbmF0YW5UZXN0IiwiaWF0IjoxNzgxNTAyNDU3LCJleHAiOjE3ODE1NDU2NTd9.rIx5Bh7609WgAxneUWV61NO2tZ5diDE5zu2qPmZEi3o
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTI4N2M0OGE2YmQ3MjYyMzRjYzEwMDEiLCJ1c2VybmFtZSI6IllvbmF0YW5UZXN0IiwiaWF0IjoxNzg2MjYyODYzLCJleHAiOjE3ODYzMDYwNjN9.1v2aG12j71mIiOTas8px4RSqSbpw2fYJtG8md1aGYT8
 
 # 3. בדיקת קניית מטבע (Buy Asset) - נתיב מוגן הדורש את הטוקן
 POST http://localhost:5001/api/crypto/buy

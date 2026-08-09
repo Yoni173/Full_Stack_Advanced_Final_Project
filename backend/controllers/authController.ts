@@ -20,6 +20,7 @@ const loginSchema = Joi.object({
 // (פונקציית ההרשמה)
 export const register = async (req: Request, res: Response): Promise<void> => {
     try {
+        //בדיקת תקינות הקלט מהלקוח מול הסכמה 
         const { error } = registerSchema.validate(req.body);
         if (error) {
             res.status(400).json({ message: error.details[0].message });
@@ -34,6 +35,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
+        // הצפנת הסיסמה לפני שמירתה במסד הנתונים באמצעות bcrypt
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
@@ -70,8 +72,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         }
 
         // השוואת הסיסמה שהוזנה מול הסיסמה המוצפנת השמורה ב-DB
-            const isMatch = await bcrypt.compare(password, user.password);
-            if (!isMatch) {
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
             res.status(400).json({ message: 'Invalid email or password' });
             return;
         }
@@ -92,6 +94,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             token
         });
     } catch (err) {
+        //הדפסת השגיאה המלאה ל Terminal
+        console.error('Critical eror during login:', err);
         res.status(500).json({ message: 'Server error during login' });
     }
 };

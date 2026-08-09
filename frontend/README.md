@@ -1,73 +1,41 @@
-# React + TypeScript + Vite
+# Crypto Simulator Project 🪙 | פרויקט סימולטור קריפטו
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 📖 אודות הפרויקט
+מערכת Full Stack מתקדמת לניהול ומסחר מדומה במטבעות קריפטוגרפיים בזמן אמת. הפרויקט נועד לפתור את הצורך בלמידה ותרגול של שוק ההון והקריפטו בסביבה מדומה, תוך שימוש בנתונים חיים, ניהול תיק אישי (Portfolio), ואבטחת מידע ברמה גבוהה.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🏗️ ארכיטקטורת המערכת (Architecture)
+הפרויקט בנוי במבנה Client-Server מובהק:
+- **צד שרת (Backend):** מנוהל באמצעות Node.js ו-Express, מספק REST API מאובטח, מבצע ולידציות קפדניות בעזרת Joi, ומקושר למסד נתונים MongoDB באמצעות Mongoose.
+- **צד לקוח (Frontend):** אפליקציית Single Page Application (SPA) מבוססת React ו-TypeScript, המשתמשת ב-React Router לניתוב, ב-Axios לקריאות שרת, וב-Context API לניהול מצב גלובלי (כמו מצב לילה - Dark Mode).
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🔒 אבטחה ואימות משתמשים (Security & Authentication)
+- **הצפנת סיסמאות:** שימוש בספריית `bcrypt` להצפנת סיסמאות המשתמשים לפני שמירתן במסד הנתונים.
+- **JSON Web Tokens (JWT):** הנפקת טוקן אימות מאובטח למשתמשים בעת התחברות.
+- **נתיבים מוגנים (Protected Routes):** אבטחת נתיבי ה-API בשרת ונתיבי ה-React בצד הלקוח כך שרק משתמשים מחוברים יוכלו לגשת אליהם.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🗄️ מבנה מסד הנתונים (Database Schemas)
+הפרויקט כולל קשרים (Relations) מרכזיים בין ה-Collections ב-MongoDB:
+1. **User Schema:** - `username` (String)
+   - `email` (String, Unique)
+   - `password` (String, Hashed)
+2. **Asset / Transaction Schema (קשור ל-User):**
+   - `userId` (ObjectId, קשר לטבלת המשתמשים)
+   - `coinId` (String - לדוגמה: bitcoin)
+   - `symbol` (String)
+   - `quantity` (Number)
+   - `avgPurchasePrice` (Number)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## ⚙️ משתני סביבה נדרשים ($ENV$)
+כדי להריץ את הפרויקט מקומית, יש ליצור קובץ `.env` בתיקיית ה-`backend` ולהגדיר בו את המשתנים הבאים:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+PORT=5001
+MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/crypto-db
+JWT_SECRET=your_super_secret_jwt_key_here

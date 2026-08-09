@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-ro
 import { Sun, Moon } from 'lucide-react' // 🪙 יבוא אייקונים מתאימים
 import { useTheme } from './context/ThemeContext' // 🪙 יבוא ההוק של ה-Theme
 import Login from './components/Login'
+import Register from './components/Register' // 🪙 יבוא קומפוננטת ההרשמה למערכת
 import Dashboard from './components/Dashboard'
 import Portfolio from './components/Portfolio'
 import CoinDetails from './components/CoinDetails'
@@ -12,16 +13,19 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
   const { isDarkMode, toggleTheme } = useTheme() // 🪙 שימוש במצב הכהה
 
+  // בדיקה האם קיים טוקן שמור בדפדפן בעת טעינת האפליקציה
   useEffect(() => {
     const token = localStorage.getItem('token')
     setIsAuthenticated(!!token)
   }, [])
 
+  // פונקציית התנתקות - מחיקת הטוקן והחזרה למסך ההתחברות
   const handleLogout = () => {
     localStorage.removeItem('token')
     window.location.href = '/login'
   }
 
+  // הצגת מסך טעינה בזמן בדיקת הסטטוס הראשונית
   if (isAuthenticated === null) return <div style={{ color: '#333', textAlign: 'center', marginTop: '50px' }}>Loading...</div>
 
   return (
@@ -35,6 +39,7 @@ function App() {
         transition: 'background-color 0.3s ease'
       }}>
 
+        {/* תפריט ניווט עליון שמופיע רק למשתמשים מחוברים */}
         {isAuthenticated && (
           <header style={{
             display: 'flex',
@@ -75,8 +80,10 @@ function App() {
           </header>
         )}
 
+        {/* ניהול נתיבים מאובטחים באפליקציה (Protected Routes) */}
         <Routes>
           <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
+          <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
           <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} />
           <Route path="/portfolio" element={isAuthenticated ? <Portfolio /> : <Navigate to="/login" />} />
           <Route path="/coin/:coinId" element={isAuthenticated ? <CoinDetails /> : <Navigate to="/login" />} />
