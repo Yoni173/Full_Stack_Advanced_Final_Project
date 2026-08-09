@@ -5,7 +5,7 @@ import { getCachedData, setCachedData } from './apiCache';
 // שומר את פרטי 10 המטבעות הנתמכים "חמים" במטמון ברקע, כדי שמשתמש שנכנס לדף מטבע
 // כמעט תמיד יקבל תשובה מיידית מהמטמון ולא יגרום לקריאה חיה שעלולה להיחסם (429) על ידי CoinGecko.
 const WARM_INTERVAL_MS = 3 * 60 * 1000;
-const GAP_BETWEEN_COINS_MS = 4000;
+const GAP_BETWEEN_COINS_MS = 8000;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
