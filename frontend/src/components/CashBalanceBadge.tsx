@@ -12,8 +12,8 @@ interface CashBalanceBadgeProps {
 const formatUsd = (value: number) =>
   value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-// היתרה מגיעה מ-Redux (במקום fetch מקומי) - כך שברגע שהיא מתעדכנת במקום אחד באפליקציה
-// (למשל אחרי קנייה בדף Trade), התג הזה מתעדכן בכל מקום שהוא מוצג בלי צורך ברענון.
+// היתרה נשלפת מ-Redux, כך שברגע שהיא מתעדכנת במקום אחד באפליקציה (למשל אחרי קנייה בדף Trade)
+// התג הזה מתעדכן בכל מקום שהוא מוצג, בלי צורך ברענון עמוד.
 function CashBalanceBadge({ label = 'Available USD', compact = false }: CashBalanceBadgeProps) {
   const { isDarkMode } = useTheme()
   const dispatch = useAppDispatch()

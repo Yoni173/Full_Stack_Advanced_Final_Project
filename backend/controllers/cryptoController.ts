@@ -358,9 +358,7 @@ export const executeTrade = async (req: AuthRequest, res: Response): Promise<voi
 };
 
 
-// --- שליפת נתוני שוק כלליים (כל המטבעות לטבלת הדשבורד) ---
-
-// פונקציה זו פתוחה לכל המשתמשים ואינה דורשת טוקן אבטחה, כדי לאפשר טעינה מהירה בדשבורד
+// שליפת נתוני שוק כלליים (כל המטבעות לטבלת הדשבורד) - פתוח לכולם, בלי צורך בטוקן אבטחה
 export const getMarkets = async (req: Request, res: Response): Promise<void> => {
     try {
         // קריאה לשירות המטמון החכם שמונע קריסות וחסימות מול CoinGecko
@@ -524,13 +522,8 @@ export const getCoinNews = async (req: Request, res: Response): Promise<void> =>
 };
 
 
-// --- שליפת מדד Fear & Greed (סנטימנט השוק) עם גיבוי ---
-
-// הפונקציה קוראת ל-API החיצוני מהשרת (Server-to-Server) ולא מהדפדפן,
-// כדי לעקוף חלוטין בעיות CORS שהיו נגרמות אם היינו קוראים ל-CMC ישירות מה-React.
-// המקור הראשי הוא CoinMarketCap (CMC) - הנקודת קצה הרשמית והחינמית שלהם, ללא צורך במפתח API.
-// אם CMC לא זמין מכל סיבה (רשת, שינוי במדיניות שלהם וכו') - נופלים בחזרה למקור גיבוי alternative.me,
-// ומסמנים זאת בתשובה לקליינט (source: 'fallback') כדי שהמשתמש ידע שהמספר עשוי להיות שונה מ-CMC.
+// שליפת מדד Fear & Greed (סנטימנט השוק). קוראת ל-CoinMarketCap מהשרת ולא מהדפדפן כדי למנוע CORS,
+// ואם המקור הראשי הזה נופל - יש גיבוי ל-alternative.me עם סימון source: 'fallback' בתשובה
 export const getFearGreedIndex = async (req: Request, res: Response): Promise<void> => {
     try {
         // ניסיון ראשון: המקור הרשמי, CoinMarketCap

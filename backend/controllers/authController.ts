@@ -5,23 +5,22 @@ import Joi from 'joi';
 import User from '../models/User';
 import { AuthRequest } from '../middleware/authMiddleware';
 
-// 1. חוקי אימות נתונים עבור הרשמה
+// חוקי אימות נתונים עבור הרשמה
 const registerSchema = Joi.object({
     username: Joi.string().min(2).max(30).required(),
     email: Joi.string().email().required(),
     password: Joi.string().min(6).required()
 });
 
-// 2. חוקי אימות נתונים עבור התחברות (Login)
+// חוקי אימות נתונים עבור התחברות (Login)
 const loginSchema = Joi.object({
     email: Joi.string().email().required(),
     password: Joi.string().required()
 });
 
-// (פונקציית ההרשמה)
 export const register = async (req: Request, res: Response): Promise<void> => {
     try {
-        //בדיקת תקינות הקלט מהלקוח מול הסכמה 
+        // בדיקת תקינות הקלט מהלקוח מול הסכמה
         const { error } = registerSchema.validate(req.body);
         if (error) {
             res.status(400).json({ message: error.details[0].message });
@@ -53,7 +52,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     }
 };
 
-// 3. פונקציית הלוגיקה של ההתחברות (Login)
 export const login = async (req: Request, res: Response): Promise<void> => {
     try {
         // אימות תקינות הקלט מהלקוח באמצעות JOI
@@ -95,7 +93,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             token
         });
     } catch (err) {
-        //הדפסת השגיאה המלאה ל Terminal
+        // הדפסת השגיאה המלאה ל-Terminal לצורך דיבוג
         console.error('Critical eror during login:', err);
         res.status(500).json({ message: 'Server error during login' });
     }

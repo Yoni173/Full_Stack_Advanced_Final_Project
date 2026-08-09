@@ -1,9 +1,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import apiClient from '../config/api'
 
-// ניהול State גלובלי למשתמש: פרופיל, תמונת פרופיל ויתרת מזומן.
-// זה משותף בין כמה קומפוננטות (Header, Dashboard, Portfolio, Trade) שבעבר כל אחת
-// שלפה את היתרה בנפרד - מה שגרם לחוסר עדכון בזמן אמת בין מסכים. עכשיו יש מקור אמת אחד.
+// Redux Slice לניהול State גלובלי של המשתמש: פרופיל, תמונת פרופיל ויתרת מזומן.
+// מקור אמת אחד ומשותף לכל הקומפוננטות שצריכות את זה (Header, Dashboard, Portfolio, Trade),
+// כדי שעדכון יתרה במסך אחד (למשל אחרי קנייה) ישתקף מיד בכל שאר המסכים.
 
 interface UserState {
   username: string | null

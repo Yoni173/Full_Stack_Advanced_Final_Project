@@ -1,7 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom'
-import { Sun, Moon } from 'lucide-react' // 🪙 יבוא אייקונים מתאימים
-import { useTheme } from './context/ThemeContext' // 🪙 יבוא ההוק של ה-Theme
+import { Sun, Moon } from 'lucide-react'
+import { useTheme } from './context/ThemeContext'
 import Logo from './components/Logo'
 import ProfileAvatar from './components/ProfileAvatar'
 
@@ -16,7 +16,7 @@ const Trade = lazy(() => import('./components/Trade'))
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
-  const { isDarkMode, toggleTheme } = useTheme() // 🪙 שימוש במצב הכהה
+  const { isDarkMode, toggleTheme } = useTheme()
 
   // בדיקה האם קיים טוקן שמור בדפדפן בעת טעינת האפליקציה
   useEffect(() => {

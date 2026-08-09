@@ -22,11 +22,7 @@ interface MarketCoin {
   sparkline_in_7d?: { price: number[] }
 }
 
-/**
- * קומפוננטת Dashboard
- * מציגה את מסך השוק הראשי, וידג'ט Fear & Greed עצמאי (FearGreedGauge),
- * שדה חיפוש מתקדם וטבלת מטבעות מלאה.
- */
+// מסך השוק הראשי - וידג'ט Fear & Greed, שדה חיפוש וטבלת המטבעות הנתמכים
 function Dashboard() {
   const navigate = useNavigate()
   const { isDarkMode } = useTheme()
@@ -151,7 +147,6 @@ function Dashboard() {
                     onMouseEnter={(e) => e.currentTarget.style.background = isDarkMode ? '#1f2937' : '#f8fafc'}
                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   >
-                    {/* שם המטבע, לוגו וסימול */}
                     <td style={{ padding: '20px 16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
                       <img src={coin.image} alt={coin.name} style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'block' }} />
                       <div>
@@ -160,12 +155,10 @@ function Dashboard() {
                       </div>
                     </td>
 
-                    {/* מחיר נוכחי */}
                     <td style={{ padding: '20px 16px', fontWeight: 800, fontSize: '15px', color: isDarkMode ? '#ffffff' : '#0f172a' }}>
                       ${coin.current_price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
 
-                    {/* שינוי 24 שעות */}
                     <td style={{ padding: '20px 16px', color: is24Positive ? '#10b981' : '#ef4444', fontWeight: 800, fontSize: '14px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         {is24Positive ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
@@ -173,7 +166,6 @@ function Dashboard() {
                       </div>
                     </td>
 
-                    {/* שינוי 7 ימים */}
                     <td style={{ padding: '20px 16px', color: is7dPositive ? '#10b981' : '#ef4444', fontWeight: 800, fontSize: '14px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         {is7dPositive ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
@@ -181,22 +173,18 @@ function Dashboard() {
                       </div>
                     </td>
 
-                    {/* שווי שוק Market Cap */}
                     <td style={{ padding: '20px 16px', color: isDarkMode ? '#94a3b8' : '#475569', fontWeight: 700, fontSize: '13px' }}>
                       ${coin.market_cap.toLocaleString()}
                     </td>
 
-                    {/* נפח מסחר Volume */}
                     <td style={{ padding: '20px 16px', color: isDarkMode ? '#94a3b8' : '#475569', fontWeight: 700, fontSize: '13px' }}>
                       ${coin.total_volume.toLocaleString()}
                     </td>
 
-                    {/* היצע במחזור */}
                     <td style={{ padding: '20px 16px', color: isDarkMode ? '#94a3b8' : '#475569', fontWeight: 700, fontSize: '13px' }}>
                       {coin.circulating_supply.toLocaleString()} {coin.symbol.toUpperCase()}
                     </td>
 
-                    {/* גרף ספארקליין 7 ימים */}
                     <td style={{ padding: '10px 16px', width: '130px', height: '45px' }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={sparklineData}>

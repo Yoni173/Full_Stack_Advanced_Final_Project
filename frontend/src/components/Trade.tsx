@@ -26,11 +26,7 @@ interface PortfolioAsset {
 const formatUsd = (value: number) =>
   value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-/**
- * קומפוננטת Trade
- * מסוף מסחר עצמאי המאפשר למשתמש לבצע פעולות קנייה ומכירה של נכסים דיגיטליים
- * תוך הזנה חופשית של סכום בדולרים או כמות מטבעות וסנכרון מול השרת.
- */
+// מסך מסחר - קנייה ומכירה של מטבעות, עם אפשרות להזין סכום בדולרים או כמות מטבעות (מתעדכן הדדית)
 function Trade() {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
@@ -86,7 +82,6 @@ function Trade() {
     }
   }, [routeAction, routeCoinId, availableCoins])
 
-  // שליפת יתרת המזומן והאחזקות הנוכחיות להצגת בדיקות בזמן אמת במסך
   useEffect(() => {
     const fetchAccountData = async () => {
       try {
@@ -106,11 +101,10 @@ function Trade() {
     fetchAccountData()
   }, [])
 
-  // שליפת המחיר העדכני של המטבע הנבחר מה-API החיצוני או מנתוני הגיבוי
   useEffect(() => {
     if (!selectedCoinId) return
 
-    // הצגה מיידית של המחיר הידוע מרשימת השוק, עוד לפני שהקריאה החיה חוזרת
+    // מציגים קודם את המחיר הידוע מרשימת השוק, כדי שהמסך לא יהיה ריק עד שהקריאה החיה חוזרת
     const knownCoin = availableCoins.find(c => c.id === selectedCoinId)
     if (knownCoin) {
       setCurrentPrice(knownCoin.current_price)
@@ -118,11 +112,10 @@ function Trade() {
 
     const fetchSelectedCoinPrice = async () => {
       try {
-        // עובר דרך השרת (עם מטמון והגנה מפני rate limit) במקום לקרוא ל-CoinGecko ישירות מהדפדפן
         const res = await apiClient.get(`/api/crypto/coin/${selectedCoinId}`)
         setCurrentPrice(res.data.market_data.current_price.usd)
       } catch {
-        // שימוש במחיר הידוע מרשימת השוק במקרה של חסימת API
+        // אם הקריאה נכשלת, פשוט נשארים עם המחיר הידוע מרשימת השוק
         if (knownCoin) {
           setCurrentPrice(knownCoin.current_price)
         }
@@ -151,7 +144,7 @@ function Trade() {
     }
   }
 
-  // ביצוע שליחת פקודת המסחר (קנייה / מכירה) לשרת המאובטח - נקרא רק אחרי שה-form validation עבר
+  // נקראת רק אחרי שה-form validation עבר בהצלחה
   const handleExecuteOrder = async () => {
     const activeCoin = availableCoins.find(c => c.id === selectedCoinId)
     if (!activeCoin) return
@@ -169,7 +162,6 @@ function Trade() {
     try {
       setStatusMessage('Processing secure trade order...')
 
-      // שליחת בקשת POST לשרת עם נתוני העסקה (הטוקן מוצמד אוטומטית ע"י apiClient)
       const tradeRes = await apiClient.post('/api/crypto/trade', {
         coinId: selectedCoinId,
         symbol: activeCoin.symbol.toLowerCase(),

@@ -1,11 +1,7 @@
 import { useForm } from 'react-hook-form'
-import { Link } from 'react-router-dom' // 🪙 ייבוא לצורך מעבר נוח לעמוד ההרשמה
+import { Link } from 'react-router-dom'
 import apiClient from '../config/api'
 
-/**
- * הגדרת "תעודת הזהות" (TypeScript Interface) עבור ה-Props שהרכיב מקבל.
- * מבטיח שהפונקציה תופעל רק בצורה תקינה.
- */
 interface LoginProps {
   onLoginSuccess?: () => void;
 }
@@ -17,10 +13,7 @@ interface LoginFormData {
 
 const inputStyle = { padding: '8px', borderRadius: '6px', border: '1px solid #ccc' }
 
-/**
- * קומפוננטת התחברות (Login)
- * אחראית על איסוף פרטי המשתמש, שליחתם לשרת וקבלת טוקן ה-JWT המאובטח.
- */
+// קומפוננטת התחברות - אוספת אימייל וסיסמה, שולחת לשרת ושומרת את טוקן ה-JWT שמתקבל
 function Login({ onLoginSuccess }: LoginProps) {
   const { register, handleSubmit, formState: { errors, isSubmitting }, setError } = useForm<LoginFormData>()
 

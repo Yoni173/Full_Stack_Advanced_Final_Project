@@ -62,7 +62,7 @@ interface Transaction {
 const formatUsd = (value: number) =>
   value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-// אחוזים קטנים/גדולים מאוד היו מתעגלים ל-0.0%/100.0% ונראים כאילו נכס נעלם - נותנים דיוק נוסף בקצוות
+// בלי זה, אחוז קטן/גדול מאוד היה מתעגל ל-0.0%/100.0% ונראה כאילו הנכס נעלם מהתיק
 const formatAllocation = (value: number) => {
   if (value <= 0) return '0%'
   if (value < 0.1) return '<0.1%'
@@ -102,7 +102,7 @@ function Portfolio() {
         setTransactions(transactionsRes.data)
 
         if (userAssets.length > 0) {
-          // עובר דרך השרת (עם מטמון והגנה מפני rate limit) במקום לקרוא ל-CoinGecko ישירות מהדפדפן
+          // שולפים מחירים עדכניים רק אם יש בכלל נכסים בתיק, כדי לחשב שווי נוכחי ורווח/הפסד
           const marketsRes = await apiClient.get('/api/crypto/markets')
           const heldCoinIds = new Set(userAssets.map((a: Asset) => a.coinId))
           setPrices(marketsRes.data.filter((coin: MarketPrice) => heldCoinIds.has(coin.id)))

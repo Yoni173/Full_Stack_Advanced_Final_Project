@@ -1,23 +1,15 @@
 import axios from 'axios';
 import { fetchWithRetry } from './apiCache';
 
-// ==========================================
-// --- מנגנון ה-Cache (זיכרון מטמון בשרת) ---
-// ==========================================
-// משתנה מקומי לשמירת הנתונים המלאים של ה-API
+// מטמון פשוט בזיכרון של השרת לנתוני השוק, כדי לא לפנות ל-CoinGecko בכל בקשה ולהיחסם
 let marketCache: any = null;
-// משתנה לשמירת חותמת הזמן שבה בוצע העדכון האחרון
 let lastFetchTime: number | null = null;
-// הגדרת משך תוקף המטמון: 3 דקות בלבד (מבוטא במילישניות) כדי לא להיחסם
-const CACHE_DURATION = 3 * 60 * 1000;
+const CACHE_DURATION = 3 * 60 * 1000; // 3 דקות
 
 // מטבעות שלא רלוונטיים לסימולטור (נכסים חדשים/נישתיים) - מוסרים מרשימת השוק
 const EXCLUDED_COIN_IDS = new Set(['figure-heloc', 'hyperliquid']);
 
-/**
- * פונקציה לשליפת נתוני השוק המלאים עבור הדשבורד.
- * משתמשת במנגנון מטמון חכם למניעת חסימות קצב (Rate Limits) מ-CoinGecko.
- */
+// שליפת נתוני השוק המלאים עבור הדשבורד, עם מטמון כדי למנוע חסימות קצב (Rate Limits) מ-CoinGecko
 export const getMarketData = async (): Promise<any> => {
     const currentTime = Date.now();
 
@@ -68,11 +60,8 @@ export const getMarketData = async (): Promise<any> => {
     }
 };
 
-/**
- * פונקציה קיימת לקבלת מחיר של מטבע בודד (לצורך ביצוע פעולות קנייה ומכירה).
- * קודם בודקת את מטמון השוק הקיים (שכבר מתעדכן כל 3 דקות ל-10 המטבעות הנתמכים) -
- * כך שקנייה/מכירה לא צורכת קריאת CoinGecko נפרדת ולא נכשלת יחד עם ה-cache warmer תחת אותה הגבלת קצב.
- */
+// קבלת מחיר עדכני של מטבע בודד, לצורך ביצוע קנייה/מכירה.
+// קודם בודקת אם המטבע כבר נמצא במטמון השוק (מתעדכן כל 3 דקות) ורק אם לא - פונה ל-CoinGecko בנפרד
 export const getCoinPrice = async (coinId: string): Promise<number> => {
     const cachedCoin = (marketCache as any[])?.find((coin) => coin.id === coinId.toLowerCase());
     if (cachedCoin?.current_price) {

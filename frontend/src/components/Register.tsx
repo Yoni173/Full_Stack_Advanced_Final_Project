@@ -1,5 +1,5 @@
 import { useForm } from 'react-hook-form'
-import { useNavigate, Link } from 'react-router-dom' // ייבוא לניתוב ומעבר עמודים
+import { useNavigate, Link } from 'react-router-dom'
 import apiClient from '../config/api'
 
 interface RegisterFormData {
@@ -10,10 +10,7 @@ interface RegisterFormData {
 
 const inputStyle = { padding: '8px', borderRadius: '6px', border: '1px solid #ccc' }
 
-/**
- * קומפוננטת הרשמה (Register)
- * אחראית על קבלת נתוני המשתמש החדש, שליחתם לשרת וניתוב חזרה להתחברות.
- */
+// קומפוננטת הרשמה - אוספת פרטי משתמש חדש, שולחת לשרת ומנתבת חזרה למסך ההתחברות
 function Register() {
   const { register, handleSubmit, formState: { errors, isSubmitting }, setError } = useForm<RegisterFormData>()
   const navigate = useNavigate()
