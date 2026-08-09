@@ -375,7 +375,7 @@ function Portfolio() {
                     {pieData.map(entry => <Cell key={entry.coinId} fill={entry.color} />)}
                   </Pie>
                   <Tooltip
-                    formatter={(value: number, name: string) => [`$${formatUsd(value)}`, name]}
+                    formatter={(value: any, name: any) => [`$${formatUsd(Number(value))}`, name]}
                     contentStyle={{
                       background: isDarkMode ? '#111827' : '#ffffff',
                       border: isDarkMode ? '1px solid #1f2937' : '1px solid #e2e8f0',
