@@ -32,16 +32,17 @@
 ---
 
 ## 🗄️ מבנה מסד הנתונים (Database Schemas)
-הפרויקט כולל קשרים (Relations) מרכזיים בין ה-Collections ב-MongoDB:
-1. **User Schema:** - `username` (String)
-   - `email` (String, Unique)
-   - `password` (String, Hashed)
-2. **Asset / Transaction Schema (קשור ל-User):**
-   - `userId` (ObjectId, קשר לטבלת המשתמשים)
-   - `coinId` (String - לדוגמה: bitcoin)
-   - `symbol` (String)
-   - `quantity` (Number)
-   - `avgPurchasePrice` (Number)
+הפרויקט כולל 3 Collections ב-MongoDB, עם קשרים (Relations) מרכזיים ביניהם דרך `userId`:
+
+1. **User** — פרטי המשתמש והחשבון:
+   - `username` (String), `email` (String, Unique), `password` (String, Hashed via bcrypt)
+   - `cashBalance` (Number, ברירת מחדל $10,000), `avatarUrl` (String, תמונת פרופיל שהועלתה)
+2. **Asset** (קשור ל-`User` דרך `userId`) — האחזקות הנוכחיות בתיק ההשקעות של כל משתמש (מסמך אחד לכל מטבע):
+   - `userId` (ObjectId, ref: User), `coinId`, `symbol`, `name`, `quantity` (Number), `avgPurchasePrice` (Number)
+   - אינדקס ייחודי משולב על `userId + coinId` — כך שלמשתמש יש מסמך אחד בלבד לכל מטבע
+3. **Transaction** (קשור ל-`User` דרך `userId`) — יומן היסטורי של כל פעולה פיננסית (קנייה/מכירה/הפקדה):
+   - `userId` (ObjectId, ref: User), `type` ('buy' | 'sell' | 'deposit'), `coinId`, `symbol`, `quantity`, `price`, `totalUsd`, `cashBalanceAfter`, `profitOrLoss`
+   - `timestamps: true` (createdAt/updatedAt אוטומטיים), עם אינדקס על `userId + createdAt` לשליפה מהירה של היסטוריית עסקאות
 
 ---
 
