@@ -147,8 +147,8 @@ function CoinDetails() {
           const volumePoint = chartRes.data.total_volumes?.[index]
           return {
             time: days === '1'
-              ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-              : date.toLocaleDateString([], { month: 'short', day: 'numeric' }),
+              ? date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+              : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
             price: p[1],
             volume: volumePoint?.[1] ?? 0
           }
@@ -358,7 +358,7 @@ function CoinDetails() {
                     <div style={{ color: textColor, fontSize: '13px', fontWeight: 900, lineHeight: 1.35 }}>{article.title}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', marginTop: '8px', color: mutedColor, fontSize: '11px', fontWeight: 700 }}>
                       <span>{article.source}</span>
-                      <span>{article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : ''}</span>
+                      <span>{article.publishedAt ? new Date(article.publishedAt).toLocaleDateString('en-US') : ''}</span>
                     </div>
                   </a>
                 ))}
@@ -404,11 +404,11 @@ function CoinDetails() {
             </div>
             <div style={{ display: 'grid', gap: '12px', fontSize: '13px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-                <span style={{ color: mutedColor }}>All-time high<br />{coin.market_data.ath_date?.usd ? new Date(coin.market_data.ath_date.usd).toLocaleDateString() : ''}</span>
+                <span style={{ color: mutedColor }}>All-time high<br />{coin.market_data.ath_date?.usd ? new Date(coin.market_data.ath_date.usd).toLocaleDateString('en-US') : ''}</span>
                 <span style={{ textAlign: 'right', color: textColor, fontWeight: 900 }}>{formatUsd(coin.market_data.ath?.usd)}<br /><span style={{ color: '#ef4444' }}>{formatPercent(coin.market_data.ath_change_percentage?.usd)}</span></span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-                <span style={{ color: mutedColor }}>All-time low<br />{coin.market_data.atl_date?.usd ? new Date(coin.market_data.atl_date.usd).toLocaleDateString() : ''}</span>
+                <span style={{ color: mutedColor }}>All-time low<br />{coin.market_data.atl_date?.usd ? new Date(coin.market_data.atl_date.usd).toLocaleDateString('en-US') : ''}</span>
                 <span style={{ textAlign: 'right', color: textColor, fontWeight: 900 }}>{formatUsd(coin.market_data.atl?.usd)}<br /><span style={{ color: '#10b981' }}>{formatPercent(coin.market_data.atl_change_percentage?.usd)}</span></span>
               </div>
             </div>
@@ -420,9 +420,6 @@ function CoinDetails() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap', padding: '16px 18px', borderBottom: `1px solid ${borderColor}` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '18px', color: mutedColor, fontWeight: 900, fontSize: '14px' }}>
                 <span style={{ color: '#3861fb', borderBottom: '2px solid #3861fb', paddingBottom: '12px' }}>Chart</span>
-                <span>Markets</span>
-                <span>News</span>
-                <span>About</span>
               </div>
               <div style={{ display: 'flex', gap: '6px', background: isDarkMode ? '#1f2937' : '#f1f5f9', padding: '4px', borderRadius: '10px' }}>
                 {RANGE_OPTIONS.map(option => (

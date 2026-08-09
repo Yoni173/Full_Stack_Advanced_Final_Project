@@ -427,7 +427,7 @@ export const getCoinChart = async (req: Request, res: Response): Promise<void> =
                 vs_currency: 'usd',
                 days
             }
-        }));
+        }), [2000, 4000, 8000]);
 
         setCachedData(cacheKey, response.data, 5 * 60 * 1000);
         res.status(200).json(response.data);
