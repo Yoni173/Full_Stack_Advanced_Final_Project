@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import axios from 'axios'
+import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom' // 🪙 ייבוא לצורך מעבר נוח לעמוד ההרשמה
+import apiClient from '../config/api'
 
 /**
  * הגדרת "תעודת הזהות" (TypeScript Interface) עבור ה-Props שהרכיב מקבל.
@@ -10,40 +10,39 @@ interface LoginProps {
   onLoginSuccess?: () => void;
 }
 
+interface LoginFormData {
+  email: string
+  password: string
+}
+
+const inputStyle = { padding: '8px', borderRadius: '6px', border: '1px solid #ccc' }
+
 /**
  * קומפוננטת התחברות (Login)
  * אחראית על איסוף פרטי המשתמש, שליחתם לשרת וקבלת טוקן ה-JWT המאובטח.
  */
 function Login({ onLoginSuccess }: LoginProps) {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const { register, handleSubmit, formState: { errors, isSubmitting }, setError } = useForm<LoginFormData>()
 
-  // פונקציה המטפלת בלחיצה על כפתור ההתחברות ושליחת הנתונים לשרת
-  const handleSubmit = async () => {
+  // פונקציה המטפלת בשליחת הטופס לאחר שעבר ולידציה בצד הלקוח
+  const onSubmit = async (data: LoginFormData) => {
     try {
       // ביצוע בקשת POST לשרת בנתיב ההתחברות המאובטח
-      const response = await axios.post('http://localhost:5001/api/auth/login', {
-        email,
-        password
-      });
+      const response = await apiClient.post('/api/auth/login', data)
 
       // שמירת ה-Token שהתקבל מהשרת בזיכרון המקומי של הדפדפן (localStorage)
-      localStorage.setItem('token', response.data.token);
-
-      console.log('Login successful! 🎉', response.data);
+      localStorage.setItem('token', response.data.token)
 
       // הפעלת פונקציית העדכון (אם קיימת) כדי לעדכן שהמשתמש מחובר
       if (onLoginSuccess) {
-        onLoginSuccess();
+        onLoginSuccess()
       } else {
         // רענון או מעבר אוטומטי לדשבורד במידת הצורך
-        window.location.href = '/dashboard';
+        window.location.href = '/dashboard'
       }
-
     } catch (error: any) {
-      // טיפול בשגיאות התחברות והצגת הודעה מפורטת בקונסול ובמסך
-      console.error('Login failed ❌', error.response?.data || error.message);
-      alert(error.response?.data?.message || 'Login failed. Check the console for details.');
+      // טיפול בשגיאות התחברות - מוצג ישירות מתחת לטופס במקום alert
+      setError('root', { message: error.response?.data?.message || 'Login failed. Please try again.' })
     }
   }
 
@@ -51,28 +50,39 @@ function Login({ onLoginSuccess }: LoginProps) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '300px', margin: '40px auto', padding: '20px' }}>
       <h2>Login to Crypto Simulator 🔑</h2>
 
-      {/* שדה הזנת אימייל */}
-      <input
-        type="email"
-        placeholder="Enter your email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ccc' }}
-      />
+      <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }} noValidate>
+        {/* שדה הזנת אימייל */}
+        <input
+          type="email"
+          placeholder="Enter your email"
+          style={inputStyle}
+          {...register('email', {
+            required: 'Email is required',
+            pattern: { value: /^\S+@\S+\.\S+$/, message: 'Enter a valid email address' }
+          })}
+        />
+        {errors.email && <span style={{ color: '#ef4444', fontSize: '12px' }}>{errors.email.message}</span>}
 
-      {/* שדה הזנת סיסמה */}
-      <input
-        type="password"
-        placeholder="Enter your password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ccc' }}
-      />
+        {/* שדה הזנת סיסמה */}
+        <input
+          type="password"
+          placeholder="Enter your password"
+          style={inputStyle}
+          {...register('password', { required: 'Password is required' })}
+        />
+        {errors.password && <span style={{ color: '#ef4444', fontSize: '12px' }}>{errors.password.message}</span>}
 
-      {/* כפתור שליחת הטופס */}
-      <button style={{ padding: '10px', cursor: 'pointer', background: '#3861fb', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold' }} onClick={handleSubmit}>
-        Login
-      </button>
+        {errors.root && <div style={{ color: '#ef4444', fontSize: '13px', textAlign: 'center' }}>{errors.root.message}</div>}
+
+        {/* כפתור שליחת הטופס */}
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          style={{ padding: '10px', cursor: isSubmitting ? 'not-allowed' : 'pointer', background: '#3861fb', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', opacity: isSubmitting ? 0.7 : 1 }}
+        >
+          {isSubmitting ? 'Logging in...' : 'Login'}
+        </button>
+      </form>
 
       {/* קישור מעבר לעמוד ההרשמה עבור משתמשים חדשים */}
       <p style={{ textAlign: 'center', fontSize: '13px', marginTop: '10px' }}>

@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { register, login } from '../controllers/authController';
+import { register, login, getMe } from '../controllers/authController';
+import { requireAuth } from '../middleware/authMiddleware';
 
 // יצירת מופע של ה-Router מתוך Express לניהול נתיבים מבודד
 const router = Router();
@@ -10,6 +11,9 @@ router.post('/register', register);
 
 // נתיב להתחברות משתמש קיים
 router.post('/login', login);
+
+// פרטי המשתמש המחובר (שם, מייל, תמונת פרופיל)
+router.get('/me', requireAuth, getMe);
 
 
 // ייצוא ה-Router כדי שנוכל לחבר אותו לשרת הראשי

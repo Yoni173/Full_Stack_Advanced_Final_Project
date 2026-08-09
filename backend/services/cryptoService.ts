@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { fetchWithRetry } from './apiCache';
 
 // ==========================================
 // --- מנגנון ה-Cache (זיכרון מטמון בשרת) ---
@@ -9,6 +10,9 @@ let marketCache: any = null;
 let lastFetchTime: number | null = null;
 // הגדרת משך תוקף המטמון: 3 דקות בלבד (מבוטא במילישניות) כדי לא להיחסם
 const CACHE_DURATION = 3 * 60 * 1000;
+
+// מטבעות שלא רלוונטיים לסימולטור (נכסים חדשים/נישתיים) - מוסרים מרשימת השוק
+const EXCLUDED_COIN_IDS = new Set(['figure-heloc', 'hyperliquid']);
 
 /**
  * פונקציה לשליפת נתוני השוק המלאים עבור הדשבורד.
@@ -29,14 +33,19 @@ export const getMarketData = async (): Promise<any> => {
             params: {
                 vs_currency: 'usd',
                 order: 'market_cap_desc',
-                per_page: 10,
+                // שולפים קצת יותר מ-10 כדי שאחרי סינון המטבעות הלא-רלוונטיים עדיין יישארו 10 בטבלה
+                per_page: 15,
                 page: 1,
-                sparkline: true
+                sparkline: true,
+                // בלי הפרמטר הזה CoinGecko לא מחזירים שינויי אחוזים לפי תקופה (נדרש גם ל-Portfolio P&L יומי/שבועי/שנתי)
+                price_change_percentage: '24h,7d,1y'
             }
         });
 
-        // שמירת הנתונים הטריים ועדכון חותמת הזמן הנוכחית
-        marketCache = response.data;
+        // שמירת הנתונים הטריים ועדכון חותמת הזמן הנוכחית, אחרי סינון מטבעות לא רלוונטיים וחיתוך ל-10
+        marketCache = (response.data as any[])
+            .filter((coin) => !EXCLUDED_COIN_IDS.has(coin.id))
+            .slice(0, 10);
         lastFetchTime = currentTime;
         return marketCache;
 
@@ -64,9 +73,10 @@ export const getMarketData = async (): Promise<any> => {
  */
 export const getCoinPrice = async (coinId: string): Promise<number> => {
     try {
-        const response = await axios.get(
+        // מנגנון retry אחד על 429 - קריאת מחיר בזמן קנייה/מכירה קריטית מכדי שתיכשל בלי ניסיון נוסף
+        const response = await fetchWithRetry(() => axios.get(
             `https://api.coingecko.com/api/v3/simple/price?ids=${coinId.toLowerCase()}&vs_currencies=usd`
-        );
+        ));
         const price = response.data[coinId.toLowerCase()]?.usd;
 
         if (!price) {

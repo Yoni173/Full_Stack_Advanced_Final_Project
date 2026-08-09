@@ -1,174 +1,360 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
-import { ArrowUpDown, ShieldCheck } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { useNavigate, useParams } from 'react-router-dom'
+import apiClient from '../config/api'
+import { ArrowUpDown } from 'lucide-react'
+import { useAppDispatch, useAppSelector } from '../store/hooks'
+import { fetchCashBalance, setCashBalance as setCashBalanceAction } from '../store/userSlice'
 
-// רשימת המטבעות הנתמכים בסימולטור שלנו
-const AVAILABLE_COINS = [
-  { id: 'bitcoin', name: 'Bitcoin', symbol: 'BTC', defaultPrice: 64016.63 },
-  { id: 'ethereum', name: 'Ethereum', symbol: 'ETH', defaultPrice: 1720.45 },
-  { id: 'tether', name: 'Tether', symbol: 'USDT', defaultPrice: 0.999 },
-  { id: 'solana', name: 'Solana', symbol: 'SOL', defaultPrice: 73.04 }
-]
+interface TradeAmounts {
+  usdAmount: number | ''
+  cryptoAmount: number | ''
+}
 
+interface TradableCoin {
+  id: string
+  name: string
+  symbol: string
+  current_price: number
+}
+
+interface PortfolioAsset {
+  coinId: string
+  quantity: number
+}
+
+const formatUsd = (value: number) =>
+  value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+/**
+ * קומפוננטת Trade
+ * מסוף מסחר עצמאי המאפשר למשתמש לבצע פעולות קנייה ומכירה של נכסים דיגיטליים
+ * תוך הזנה חופשית של סכום בדולרים או כמות מטבעות וסנכרון מול השרת.
+ */
 function Trade() {
   const navigate = useNavigate()
+  const dispatch = useAppDispatch()
+  const { cashBalance } = useAppSelector((state) => state.user)
+  const { action: routeAction, coinId: routeCoinId } = useParams<{ action?: string; coinId?: string }>()
 
-  // ניהול מצבי הטופס
+  // ניהול מצבי הטופס (Action, מטבע נבחר, מחיר) - הסכומים עצמם מנוהלים ע"י react-hook-form
   const [action, setAction] = useState<'buy' | 'sell'>('buy')
-  const [selectedCoinId, setSelectedCoinId] = useState('bitcoin')
-  const [currentPrice, setCurrentPrice] = useState<number>(64016.63)
-  const [usdAmount, setUsdAmount] = useState<number>(0)
-  const [cryptoAmount, setCryptoAmount] = useState<number>(0)
+  const [selectedCoinId, setSelectedCoinId] = useState(routeCoinId || 'bitcoin')
+  const [currentPrice, setCurrentPrice] = useState<number>(0)
   const [statusMessage, setStatusMessage] = useState('')
 
-  // שליפת המחיר העדכני של המטבע שנבחר מתוך ה-API או מהגיבוי המקומי
+  const { register: registerAmount, watch, setValue, handleSubmit, formState: { errors: amountErrors } } =
+    useForm<TradeAmounts>({ defaultValues: { usdAmount: '', cryptoAmount: '' } })
+  const usdAmount = watch('usdAmount')
+  const cryptoAmount = watch('cryptoAmount')
+  const [portfolioAssets, setPortfolioAssets] = useState<PortfolioAsset[]>([])
+  const [accountLoading, setAccountLoading] = useState(true)
+  const [availableCoins, setAvailableCoins] = useState<TradableCoin[]>([])
+  const [coinsLoading, setCoinsLoading] = useState(true)
+
+  // שליפת כל המטבעות שמופיעים ב-Markets, כדי שכל מטבע שאפשר לראות אפשר גם לסחור בו
   useEffect(() => {
+    const fetchTradableCoins = async () => {
+      try {
+        const res = await apiClient.get('/api/crypto/markets')
+        const coins: TradableCoin[] = (res.data || []).map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          symbol: String(c.symbol).toUpperCase(),
+          current_price: c.current_price
+        }))
+        setAvailableCoins(coins)
+      } catch (error) {
+        console.error('Failed to fetch tradable coins:', error)
+      } finally {
+        setCoinsLoading(false)
+      }
+    }
+    fetchTradableCoins()
+  }, [])
+
+  // סנכרון הפעולה והמטבע הנבחרים עם פרמטרי הנתיב (כשמגיעים דרך "Trade" מדף מטבע ספציפי)
+  useEffect(() => {
+    if (routeAction === 'buy' || routeAction === 'sell') {
+      setAction(routeAction)
+    }
+
+    if (routeCoinId && availableCoins.some(c => c.id === routeCoinId)) {
+      setSelectedCoinId(routeCoinId)
+    } else if (!routeCoinId && availableCoins.length > 0 && !availableCoins.some(c => c.id === selectedCoinId)) {
+      setSelectedCoinId(availableCoins[0].id)
+    }
+  }, [routeAction, routeCoinId, availableCoins])
+
+  // שליפת יתרת המזומן והאחזקות הנוכחיות להצגת בדיקות בזמן אמת במסך
+  useEffect(() => {
+    const fetchAccountData = async () => {
+      try {
+        const [, portfolioRes] = await Promise.all([
+          dispatch(fetchCashBalance()),
+          apiClient.get('/api/crypto/portfolio')
+        ])
+
+        setPortfolioAssets(portfolioRes.data)
+      } catch (error) {
+        console.error('Failed to fetch account data:', error)
+      } finally {
+        setAccountLoading(false)
+      }
+    }
+
+    fetchAccountData()
+  }, [])
+
+  // שליפת המחיר העדכני של המטבע הנבחר מה-API החיצוני או מנתוני הגיבוי
+  useEffect(() => {
+    if (!selectedCoinId) return
+
+    // הצגה מיידית של המחיר הידוע מרשימת השוק, עוד לפני שהקריאה החיה חוזרת
+    const knownCoin = availableCoins.find(c => c.id === selectedCoinId)
+    if (knownCoin) {
+      setCurrentPrice(knownCoin.current_price)
+    }
+
     const fetchSelectedCoinPrice = async () => {
       try {
-        const res = await axios.get(`https://api.coingecko.com/api/v3/coins/${selectedCoinId}`, {
-          params: { localization: false, tickers: false, community_data: false, developer_data: false, sparkline: false }
-        })
+        // עובר דרך השרת (עם מטמון והגנה מפני rate limit) במקום לקרוא ל-CoinGecko ישירות מהדפדפן
+        const res = await apiClient.get(`/api/crypto/coin/${selectedCoinId}`)
         setCurrentPrice(res.data.market_data.current_price.usd)
-      } catch (error) {
-        // אם יש חסימה של ה-API, נשלוף את מחיר הגיבוי המוגדר ברשימה שלנו למניעת תקיעות במסך
-        const fallback = AVAILABLE_COINS.find(c => c.id === selectedCoinId)
-        if (fallback) {
-          setCurrentPrice(fallback.defaultPrice)
+      } catch {
+        // שימוש במחיר הידוע מרשימת השוק במקרה של חסימת API
+        if (knownCoin) {
+          setCurrentPrice(knownCoin.current_price)
         }
       }
     }
     fetchSelectedCoinPrice()
-  }, [selectedCoinId])
+  }, [selectedCoinId, availableCoins])
 
-  // חישוב כמות הקריפטו מוגבלת ל-3 ספרות עשרוניות בכל פעם שסכום הדולר משתנה
-  useEffect(() => {
-    if (currentPrice > 0 && usdAmount > 0) {
-      const calculated = usdAmount / currentPrice
-      setCryptoAmount(Number(calculated.toFixed(3)))
+  // טיפול בעדכון סכום דולרי וחישוב כמות הקריפטו המקבילה באופן ויזואלי
+  const handleUsdChange = (val: number | '') => {
+    if (val === '' || val <= 0 || currentPrice <= 0) {
+      setValue('cryptoAmount', '', { shouldValidate: true })
     } else {
-      setCryptoAmount(0)
+      const calculated = Number(val) / currentPrice
+      setValue('cryptoAmount', Number(calculated.toFixed(4)), { shouldValidate: true })
     }
-  }, [usdAmount, currentPrice])
+  }
 
+  // טיפול בעדכון כמות קריפטו וחישוב הסכום הדולרי המקביל באופן ויזואלי
+  const handleCryptoChange = (val: number | '') => {
+    if (val === '' || val <= 0 || currentPrice <= 0) {
+      setValue('usdAmount', '', { shouldValidate: true })
+    } else {
+      const calculated = Number(val) * currentPrice
+      setValue('usdAmount', Number(calculated.toFixed(2)), { shouldValidate: true })
+    }
+  }
+
+  // ביצוע שליחת פקודת המסחר (קנייה / מכירה) לשרת המאובטח - נקרא רק אחרי שה-form validation עבר
   const handleExecuteOrder = async () => {
-    if (usdAmount <= 0) {
-      setStatusMessage('אנא הזן סכום דולרי תקין הגדולה מ-0')
+    const activeCoin = availableCoins.find(c => c.id === selectedCoinId)
+    if (!activeCoin) return
+
+    if (isInsufficientCash) {
+      setStatusMessage(`Not enough USD balance. You have $${formatUsd(cashBalance ?? 0)}.`)
       return
     }
 
-    const activeCoin = AVAILABLE_COINS.find(c => c.id === selectedCoinId)
-    if (!activeCoin) return
+    if (isInsufficientCrypto) {
+      setStatusMessage(`Not enough ${activeCoin.symbol}. You own ${ownedQuantity.toLocaleString(undefined, { maximumFractionDigits: 8 })} ${activeCoin.symbol}.`)
+      return
+    }
 
     try {
-      setStatusMessage('משדר פקודת מסחר מאובטחת...')
-      const token = localStorage.getItem('token')
+      setStatusMessage('Processing secure trade order...')
 
-      await axios.post('http://localhost:5001/api/crypto/trade', {
+      // שליחת בקשת POST לשרת עם נתוני העסקה (הטוקן מוצמד אוטומטית ע"י apiClient)
+      const tradeRes = await apiClient.post('/api/crypto/trade', {
         coinId: selectedCoinId,
         symbol: activeCoin.symbol.toLowerCase(),
         name: activeCoin.name,
         type: action,
-        quantity: cryptoAmount,
+        quantity: Number(cryptoAmount),
         price: currentPrice
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       })
 
-      setStatusMessage('הפקודה בוצעה בהצלחה! התיק עודכן. 🚀')
+      if (typeof tradeRes.data?.cashBalance === 'number') {
+        // מעדכן את היתרה ב-Redux כדי שה-Header וכל שאר המסכים ישקפו את זה מיידית
+        dispatch(setCashBalanceAction(tradeRes.data.cashBalance))
+      }
+
+      setStatusMessage('Order executed successfully! Portfolio updated. 🚀')
+      // מעבר אוטומטי לעמוד תיק ההשקעות לאחר ביצוע מוצלח מבלי לזרוק לשוק
       setTimeout(() => navigate('/portfolio'), 1500)
     } catch (error: any) {
-      setStatusMessage(error.response?.data?.message || 'הפעולה נכשלה. ודא שיש לך מספיק יתרה בחשבון.')
+      setStatusMessage(error.response?.data?.message || 'Trade failed. Please check your balance.')
     }
   }
 
-  const activeCoinInfo = AVAILABLE_COINS.find(c => c.id === selectedCoinId)
+  const activeCoinInfo = availableCoins.find(c => c.id === selectedCoinId)
+  const parsedUsdAmount = usdAmount === '' ? 0 : Number(usdAmount)
+  const parsedCryptoAmount = cryptoAmount === '' ? 0 : Number(cryptoAmount)
+  const ownedQuantity = portfolioAssets.find(asset => asset.coinId === selectedCoinId)?.quantity ?? 0
+  const estimatedRemainingCash = cashBalance === null ? null : cashBalance - parsedUsdAmount
+  const isInsufficientCash = action === 'buy' && cashBalance !== null && parsedUsdAmount > cashBalance
+  const isInsufficientCrypto = action === 'sell' && parsedCryptoAmount > ownedQuantity
+  const isSubmitDisabled = accountLoading || coinsLoading || !activeCoinInfo || parsedUsdAmount <= 0 || parsedCryptoAmount <= 0 || isInsufficientCash || isInsufficientCrypto
 
   return (
-    <div style={{ maxWidth: '500px', margin: '60px auto', padding: '0 20px', color: '#0f172a' }}>
+    <div style={{ maxWidth: '500px', margin: '60px auto', padding: '0 20px', color: '#0f172a', direction: 'ltr' }}>
       <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '24px', padding: '32px', boxShadow: '0 10px 30px rgba(0,0,0,0.01)' }}>
 
-        <h2 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: 800, textAlign: 'center' }}>מסוף מסחר עצמאי</h2>
+        <h2 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: 800, textAlign: 'center' }}>Independent Trading Terminal</h2>
 
-        {/* 1. בחירת סוג הפעולה: קנייה או מכירה */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+          <div style={{ background: '#f8fafc', padding: '14px 16px', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+            <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 700, marginBottom: '4px' }}>Available USD</div>
+            <div style={{ fontSize: '20px', color: '#10b981', fontWeight: 900 }}>
+              {accountLoading ? 'Loading...' : cashBalance === null ? 'Unavailable' : `$${formatUsd(cashBalance)}`}
+            </div>
+          </div>
+          <div style={{ background: '#f8fafc', padding: '14px 16px', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+            <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 700, marginBottom: '4px' }}>Owned {activeCoinInfo?.symbol}</div>
+            <div style={{ fontSize: '20px', color: '#3861fb', fontWeight: 900 }}>
+              {accountLoading ? 'Loading...' : `${ownedQuantity.toLocaleString(undefined, { maximumFractionDigits: 8 })} ${activeCoinInfo?.symbol}`}
+            </div>
+          </div>
+        </div>
+
+        {/* 1. בחירת סוג פעולה: קנייה או מכירה */}
         <div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
           <button
             type="button"
-            onClick={() => setAction('buy')}
+            onClick={() => { setAction('buy'); setStatusMessage('') }}
             style={{ flex: 1, padding: '12px', borderRadius: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: action === 'buy' ? '#10b981' : '#f1f5f9', color: action === 'buy' ? '#fff' : '#475569', transition: 'all 0.2s' }}
           >
-            קנייה (Buy)
+            Buy
           </button>
           <button
             type="button"
-            onClick={() => setAction('sell')}
+            onClick={() => { setAction('sell'); setStatusMessage('') }}
             style={{ flex: 1, padding: '12px', borderRadius: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: action === 'sell' ? '#ef4444' : '#f1f5f9', color: action === 'sell' ? '#fff' : '#475569', transition: 'all 0.2s' }}
           >
-            מכירה (Sell)
+            Sell
           </button>
         </div>
 
-        {/* 2. תפריט בחירת מטבע קריפטו מתוך הרשימה */}
+        {/* 2. תפריט בחירת מטבע קריפטו */}
         <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>בחר נכס דיגיטלי למסחר</label>
+          <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>Select Digital Asset</label>
           <select
             value={selectedCoinId}
-            onChange={(e) => { setSelectedCoinId(e.target.value); setUsdAmount(0); }}
+            onChange={(e) => { setSelectedCoinId(e.target.value); setValue('usdAmount', ''); setValue('cryptoAmount', ''); setStatusMessage('') }}
+            disabled={coinsLoading}
             style={{ width: '100%', padding: '14px', border: '1px solid #e2e8f0', borderRadius: '14px', fontSize: '15px', fontWeight: 600, color: '#0f172a', outline: 'none', background: '#fff' }}
           >
-            {AVAILABLE_COINS.map(coin => (
+            {coinsLoading && <option>Loading assets...</option>}
+            {availableCoins.map(coin => (
               <option key={coin.id} value={coin.id}>{coin.name} ({coin.symbol})</option>
             ))}
           </select>
         </div>
 
+        {/* הצגת שער החליפין הנוכחי בשוק */}
         <div style={{ marginBottom: '20px', background: '#f8fafc', padding: '12px 16px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>שער חליפין נוכחי בשוק:</span>
+          <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Current Market Rate:</span>
           <span style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
         </div>
 
-        {/* 3. שדה הזנת סכום דולרי */}
+        <form onSubmit={handleSubmit(handleExecuteOrder)} noValidate>
+
+        {/* 3. שדה הזנה חופשי בסכום דולרי ($) */}
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>סכום מבוקש בדולר ($)</label>
+          <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>Amount in USD ($)</label>
           <div style={{ position: 'relative' }}>
             <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: 700, color: '#94a3b8' }}>$</span>
             <input
               type="number"
+              step="0.01"
               placeholder="0.00"
-              value={usdAmount === 0 ? '' : usdAmount}
-              onChange={(e) => handleUsdChange(Number(e.target.value))}
-              style={{ width: '100%', padding: '14px 14px 14px 32px', border: '1px solid #e2e8f0', borderRadius: '14px', fontSize: '16px', fontWeight: 700, outline: 'none', boxSizing: 'border-box' }}
+              {...registerAmount('usdAmount', {
+                required: 'Enter a USD amount',
+                valueAsNumber: true,
+                min: { value: 0.01, message: 'Amount must be greater than 0' },
+                onChange: (e) => handleUsdChange(e.target.value === '' ? '' : Number(e.target.value))
+              })}
+              style={{ width: '100%', padding: '14px 14px 14px 32px', border: amountErrors.usdAmount ? '1px solid #ef4444' : '1px solid #e2e8f0', borderRadius: '14px', fontSize: '16px', fontWeight: 700, outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
+          {amountErrors.usdAmount && (
+            <div style={{ marginTop: '6px', fontSize: '12px', color: '#ef4444', fontWeight: 700 }}>{amountErrors.usdAmount.message}</div>
+          )}
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center', margin: '16px 0' }}>
           <div style={{ background: '#f1f5f9', padding: '8px', borderRadius: '50%', color: '#3861fb' }}><ArrowUpDown size={16} /></div>
         </div>
 
-        {/* 4. תצוגת כמות הקריפטו המחושבת (עד 3 ספרות עשרוניות) */}
+        {/* 4. שדה הזנה חופשי או תצוגה מעודכנת של כמות הקריפטו */}
         <div style={{ marginBottom: '24px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>כמות מוערכת שתתקבל</label>
+          <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>Coin Quantity ({activeCoinInfo?.symbol})</label>
           <input
-            type="text"
-            readOnly
-            value={cryptoAmount > 0 ? `${cryptoAmount} ${activeCoinInfo?.symbol}` : `0.00 ${activeCoinInfo?.symbol}`}
-            style={{ width: '100%', padding: '14px', border: '1px solid #e2e8f0', borderRadius: '14px', fontSize: '16px', fontWeight: 700, background: '#f8fafc', color: '#334155', boxSizing: 'border-box' }}
+            type="number"
+            step="any"
+            placeholder="0.00"
+            {...registerAmount('cryptoAmount', {
+              required: 'Enter a coin quantity',
+              valueAsNumber: true,
+              min: { value: 0.00000001, message: 'Quantity must be greater than 0' },
+              onChange: (e) => handleCryptoChange(e.target.value === '' ? '' : Number(e.target.value))
+            })}
+            style={{ width: '100%', padding: '14px', border: amountErrors.cryptoAmount ? '1px solid #ef4444' : '1px solid #e2e8f0', borderRadius: '14px', fontSize: '16px', fontWeight: 700, background: '#fff', color: '#0f172a', boxSizing: 'border-box', outline: 'none' }}
           />
+          {amountErrors.cryptoAmount && (
+            <div style={{ marginTop: '6px', fontSize: '12px', color: '#ef4444', fontWeight: 700 }}>{amountErrors.cryptoAmount.message}</div>
+          )}
         </div>
 
+        {action === 'buy' && parsedUsdAmount > 0 && estimatedRemainingCash !== null && !isInsufficientCash && (
+          <div style={{ margin: '-8px 0 16px 0', fontSize: '13px', color: '#10b981', fontWeight: 700, textAlign: 'center' }}>
+            Estimated USD after buy: ${formatUsd(estimatedRemainingCash)}
+          </div>
+        )}
+
+        {isInsufficientCash && (
+          <div style={{ margin: '-8px 0 16px 0', fontSize: '13px', color: '#ef4444', fontWeight: 700, textAlign: 'center' }}>
+            Not enough USD balance for this buy order.
+          </div>
+        )}
+
+        {isInsufficientCrypto && (
+          <div style={{ margin: '-8px 0 16px 0', fontSize: '13px', color: '#ef4444', fontWeight: 700, textAlign: 'center' }}>
+            Not enough {activeCoinInfo?.symbol} available for this sell order.
+          </div>
+        )}
+
         {statusMessage && (
-          <p style={{ fontSize: '13px', fontWeight: 600, textAlign: 'center', margin: '0 0 16px 0', color: statusMessage.includes('نجاح') || statusMessage.includes('בהצלחה') ? '#10b981' : '#ef4444' }}>
+          <p style={{ fontSize: '13px', fontWeight: 600, textAlign: 'center', margin: '0 0 16px 0', color: statusMessage.includes('successfully') ? '#10b981' : '#ef4444' }}>
             {statusMessage}
           </p>
         )}
 
+        {/* כפתור אישור וביצוע הפקודה */}
         <button
-          onClick={handleExecuteOrder}
-          style={{ width: '100%', padding: '14px', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: 700, color: '#fff', background: action === 'buy' ? '#10b981' : '#ef4444', cursor: 'pointer', boxShadow: action === 'buy' ? '0 4px 12px rgba(16,185,129,0.15)' : '0 4px 12px rgba(239,68,68,0.15)' }}
+          type="submit"
+          disabled={isSubmitDisabled}
+          style={{
+            width: '100%',
+            padding: '14px',
+            border: 'none',
+            borderRadius: '14px',
+            fontSize: '15px',
+            fontWeight: 700,
+            color: '#fff',
+            background: isSubmitDisabled ? '#94a3b8' : action === 'buy' ? '#10b981' : '#ef4444',
+            cursor: isSubmitDisabled ? 'not-allowed' : 'pointer',
+            boxShadow: isSubmitDisabled ? 'none' : action === 'buy' ? '0 4px 12px rgba(16,185,129,0.15)' : '0 4px 12px rgba(239,68,68,0.15)'
+          }}
         >
-          אישור וביצוע הפקודה
+          {action === 'buy' ? 'Execute Buy Order' : 'Execute Sell Order'}
         </button>
+        </form>
       </div>
     </div>
   )

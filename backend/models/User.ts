@@ -18,6 +18,15 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
+    cashBalance: {
+        type: Number,
+        default: 10000,
+        min: [0, 'Cash balance cannot be negative']
+    },
+    avatarUrl: {
+        type: String,
+        default: null
+    },
     createdAt: {
         type: Date,
         default: Date.now // מגדיר תאריך יצירה אוטומטי לרגע ההרשמה

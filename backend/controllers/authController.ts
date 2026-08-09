@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import Joi from 'joi';
 import User from '../models/User';
+import { AuthRequest } from '../middleware/authMiddleware';
 
 // 1. חוקי אימות נתונים עבור הרשמה
 const registerSchema = Joi.object({
@@ -97,5 +98,26 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         //הדפסת השגיאה המלאה ל Terminal
         console.error('Critical eror during login:', err);
         res.status(500).json({ message: 'Server error during login' });
+    }
+};
+
+// שליפת פרטי המשתמש המחובר (כולל תמונת הפרופיל) עבור ה-Header בצד הלקוח
+export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) {
+            res.status(401).json({ message: 'Authentication required' });
+            return;
+        }
+
+        const user = await User.findById(userId).select('username email avatarUrl');
+        if (!user) {
+            res.status(404).json({ message: 'User not found' });
+            return;
+        }
+
+        res.status(200).json(user);
+    } catch (err) {
+        res.status(500).json({ message: 'Server error while fetching user profile' });
     }
 };
