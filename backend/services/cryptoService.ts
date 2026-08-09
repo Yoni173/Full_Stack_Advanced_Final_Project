@@ -70,8 +70,15 @@ export const getMarketData = async (): Promise<any> => {
 
 /**
  * פונקציה קיימת לקבלת מחיר של מטבע בודד (לצורך ביצוע פעולות קנייה ומכירה).
+ * קודם בודקת את מטמון השוק הקיים (שכבר מתעדכן כל 3 דקות ל-10 המטבעות הנתמכים) -
+ * כך שקנייה/מכירה לא צורכת קריאת CoinGecko נפרדת ולא נכשלת יחד עם ה-cache warmer תחת אותה הגבלת קצב.
  */
 export const getCoinPrice = async (coinId: string): Promise<number> => {
+    const cachedCoin = (marketCache as any[])?.find((coin) => coin.id === coinId.toLowerCase());
+    if (cachedCoin?.current_price) {
+        return cachedCoin.current_price;
+    }
+
     try {
         // מנגנון retry אחד על 429 - קריאת מחיר בזמן קנייה/מכירה קריטית מכדי שתיכשל בלי ניסיון נוסף
         const response = await fetchWithRetry(() => axios.get(
