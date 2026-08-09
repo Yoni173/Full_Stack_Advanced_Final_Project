@@ -48,7 +48,7 @@ function Login({ onLoginSuccess }: LoginProps) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '300px', margin: '40px auto', padding: '20px' }}>
-      <h2>Login to Crypto Simulator 🔑</h2>
+      <h2>Login to CryptoVault 🔑</h2>
 
       <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }} noValidate>
         {/* שדה הזנת אימייל */}

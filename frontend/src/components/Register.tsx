@@ -32,7 +32,7 @@ function Register() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '300px', margin: '40px auto', padding: '20px' }}>
-      <h2>Register to Crypto Simulator 📝</h2>
+      <h2>Register to CryptoVault 📝</h2>
 
       {errors.root && <div style={{ color: '#ef4444', fontSize: '13px', textAlign: 'center' }}>{errors.root.message}</div>}
 
