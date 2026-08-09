@@ -31,7 +31,7 @@ app.use('/uploads', express.static('uploads'));
 
 // הגדרת נתיב בדיקה ראשי לשרת
 app.get('/', (req, res) => {
-    res.send('Welcome to CryptoVault Backend! 🚀');
+    res.send('Welcome to CryptoSimulator Backend! 🚀');
 });
 
 // נתיב שלא קיים בכלל - 404 אחיד

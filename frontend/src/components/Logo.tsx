@@ -4,7 +4,7 @@ interface LogoProps {
   size?: number
 }
 
-// סמל ה-CryptoVault: אבן חן חתוכה בצורת משושה (blockchain hex) בגרדיאנט זהב - "אוצר שמור בכספת"
+// סמל האפליקציה: אבן חן חתוכה בצורת משושה (blockchain hex) בגרדיאנט זהב - "אוצר שמור בכספת"
 function Logo({ size = 26 }: LogoProps) {
   const uid = useId()
   const fillId = `cv-gem-fill-${uid}`

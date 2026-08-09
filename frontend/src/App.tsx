@@ -62,7 +62,7 @@ function App() {
               <Logo size={38} />
               <span style={{ fontSize: '25px', letterSpacing: '-0.015em', whiteSpace: 'nowrap' }}>
                 <span style={{ fontWeight: 700, color: isDarkMode ? '#f8fafc' : '#0f172a' }}>Crypto</span>
-                <span style={{ fontWeight: 900, color: isDarkMode ? '#fbbf24' : '#d97706' }}>Vault</span>
+                <span style={{ fontWeight: 900, color: isDarkMode ? '#fbbf24' : '#d97706' }}>Simulator</span>
               </span>
             </div>
             <nav style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
