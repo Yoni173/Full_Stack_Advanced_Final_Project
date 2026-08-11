@@ -3,7 +3,12 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import Joi from 'joi';
 import User from '../models/User';
+import Asset from '../models/Asset';
+import Transaction from '../models/Transaction';
 import { AuthRequest } from '../middleware/authMiddleware';
+
+// המשתמש היחיד שרשאי לראות את רשימת כל המשתמשים במערכת (מסך Admin)
+const ADMIN_EMAIL = 'yonatan@test.com';
 
 // חוקי אימות נתונים עבור הרשמה
 const registerSchema = Joi.object({
@@ -77,6 +82,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
+        // עדכון מועד ההתחברות האחרון, לצורך מסך ה-Admin
+        user.lastLoginAt = new Date();
+        await user.save();
+
         // שליפת מפתח ה-JWT הסודי מקובץ ה-env
         const jwtSecret = process.env.JWT_SECRET || 'fallback_secret_key';
 
@@ -117,5 +126,54 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
         res.status(200).json(user);
     } catch (err) {
         res.status(500).json({ message: 'Server error while fetching user profile' });
+    }
+};
+
+// מחיקת חשבון המשתמש המחובר לצמיתות, כולל כל התיק וההיסטוריה שלו
+export const deleteAccount = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) {
+            res.status(401).json({ message: 'Authentication required' });
+            return;
+        }
+
+        await Asset.deleteMany({ userId });
+        await Transaction.deleteMany({ userId });
+        const deletedUser = await User.findByIdAndDelete(userId);
+
+        if (!deletedUser) {
+            res.status(404).json({ message: 'User not found' });
+            return;
+        }
+
+        res.status(200).json({ message: 'Account deleted successfully.' });
+    } catch (err) {
+        res.status(500).json({ message: 'Server error while deleting account' });
+    }
+};
+
+// רשימת כל המשתמשים במערכת - פתוח רק למשתמש האדמין (ADMIN_EMAIL)
+export const getAllUsers = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) {
+            res.status(401).json({ message: 'Authentication required' });
+            return;
+        }
+
+        const requestingUser = await User.findById(userId).select('email');
+        if (!requestingUser || requestingUser.email !== ADMIN_EMAIL) {
+            res.status(403).json({ message: 'Access denied. Admins only ⛔' });
+            return;
+        }
+
+        const users = await User.find()
+            .select('username email cashBalance createdAt lastLoginAt')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json(users);
+    } catch (err) {
+        res.status(500).json({ message: 'Server error while fetching users list' });
     }
 };

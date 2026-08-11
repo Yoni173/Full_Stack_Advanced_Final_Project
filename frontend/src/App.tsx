@@ -2,6 +2,8 @@ import { useState, useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom'
 import { Sun, Moon } from 'lucide-react'
 import { useTheme } from './context/ThemeContext'
+import { useAppDispatch, useAppSelector } from './store/hooks'
+import { fetchUserProfile, deleteAccount, resetUser } from './store/userSlice'
 import Logo from './components/Logo'
 import ProfileAvatar from './components/ProfileAvatar'
 
@@ -13,10 +15,16 @@ const Dashboard = lazy(() => import('./components/Dashboard'))
 const Portfolio = lazy(() => import('./components/Portfolio'))
 const CoinDetails = lazy(() => import('./components/CoinDetails'))
 const Trade = lazy(() => import('./components/Trade'))
+const AdminUsers = lazy(() => import('./components/AdminUsers'))
+
+// המשתמש היחיד שרואה את קישור ה-Admin בתפריט - השרת אוכף את זה בכל מקרה בנפרד
+const ADMIN_EMAIL = 'yonatan@test.com'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
   const { isDarkMode, toggleTheme } = useTheme()
+  const dispatch = useAppDispatch()
+  const { email, profileStatus } = useAppSelector((state) => state.user)
 
   // בדיקה האם קיים טוקן שמור בדפדפן בעת טעינת האפליקציה
   useEffect(() => {
@@ -24,10 +32,31 @@ function App() {
     setIsAuthenticated(!!token)
   }, [])
 
+  useEffect(() => {
+    if (isAuthenticated && profileStatus === 'idle') {
+      dispatch(fetchUserProfile())
+    }
+  }, [isAuthenticated, profileStatus, dispatch])
+
   // פונקציית התנתקות - מחיקת הטוקן והחזרה למסך ההתחברות
   const handleLogout = () => {
     localStorage.removeItem('token')
     window.location.href = '/login'
+  }
+
+  // מחיקת חשבון לצמיתות - דורשת אישור מפורש כי אי אפשר לבטל את זה
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm('⚠️ Are you sure you want to delete your account?\n\nThis will permanently delete it — there is no way to restore it. Your portfolio and transaction history will be gone forever.')
+    if (!confirmed) return
+
+    try {
+      await dispatch(deleteAccount()).unwrap()
+      localStorage.removeItem('token')
+      dispatch(resetUser())
+      window.location.href = '/login'
+    } catch {
+      alert('Failed to delete account. Please try again.')
+    }
   }
 
   // הצגת מסך טעינה בזמן בדיקת הסטטוס הראשונית
@@ -69,6 +98,9 @@ function App() {
               <Link to="/dashboard" style={{ color: isDarkMode ? '#94a3b8' : '#64748b', textDecoration: 'none', fontWeight: 500 }}>Markets</Link>
               <Link to="/portfolio" style={{ color: isDarkMode ? '#94a3b8' : '#64748b', textDecoration: 'none', fontWeight: 500 }}>Portfolio</Link>
               <Link to="/trade" style={{ color: isDarkMode ? '#94a3b8' : '#64748b', textDecoration: 'none', fontWeight: 500 }}>Trade</Link>
+              {email === ADMIN_EMAIL && (
+                <Link to="/admin" style={{ color: '#3861fb', textDecoration: 'none', fontWeight: 700 }}>Admin</Link>
+              )}
 
               {/* כפתור מחליף ה-Theme החכם */}
               <button
@@ -89,6 +121,8 @@ function App() {
               <ProfileAvatar />
 
               <button onClick={handleLogout} style={{ background: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.15)', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>Logout</button>
+
+              <button onClick={handleDeleteAccount} title="Delete your account permanently" style={{ background: 'none', color: isDarkMode ? '#64748b' : '#94a3b8', border: 'none', padding: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600, textDecoration: 'underline' }}>Delete Account</button>
             </nav>
           </header>
         )}
@@ -104,6 +138,7 @@ function App() {
             <Route path="/coin/:coinId" element={isAuthenticated ? <CoinDetails /> : <Navigate to="/login" />} />
             <Route path="/trade" element={isAuthenticated ? <Trade /> : <Navigate to="/login" />} />
             <Route path="/trade/:action/:coinId" element={isAuthenticated ? <Trade /> : <Navigate to="/login" />} />
+            <Route path="/admin" element={isAuthenticated ? <AdminUsers /> : <Navigate to="/login" />} />
             <Route path="*" element={<Navigate to="/dashboard" />} />
           </Routes>
         </Suspense>

@@ -30,6 +30,10 @@ const userSchema = new Schema({
     createdAt: {
         type: Date,
         default: Date.now // מגדיר תאריך יצירה אוטומטי לרגע ההרשמה
+    },
+    lastLoginAt: {
+        type: Date,
+        default: null
     }
 });
 

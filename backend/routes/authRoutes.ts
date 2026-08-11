@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, getMe } from '../controllers/authController';
+import { register, login, getMe, deleteAccount, getAllUsers } from '../controllers/authController';
 import { requireAuth } from '../middleware/authMiddleware';
 
 // יצירת מופע של ה-Router מתוך Express לניהול נתיבים מבודד
@@ -14,6 +14,12 @@ router.post('/login', login);
 
 // פרטי המשתמש המחובר (שם, מייל, תמונת פרופיל)
 router.get('/me', requireAuth, getMe);
+
+// מחיקת חשבון המשתמש המחובר לצמיתות
+router.delete('/me', requireAuth, deleteAccount);
+
+// רשימת כל המשתמשים - מוגן גם ב-requireAuth וגם בבדיקת אדמין בתוך הקונטרולר
+router.get('/users', requireAuth, getAllUsers);
 
 
 // ייצוא ה-Router כדי שנוכל לחבר אותו לשרת הראשי

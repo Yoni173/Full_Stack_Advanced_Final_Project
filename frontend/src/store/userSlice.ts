@@ -40,6 +40,10 @@ export const depositCash = createAsyncThunk('user/deposit', async (amount: numbe
   return res.data as { cashBalance: number; transaction: any }
 })
 
+export const deleteAccount = createAsyncThunk('user/deleteAccount', async () => {
+  await apiClient.delete('/api/auth/me')
+})
+
 export const uploadAvatar = createAsyncThunk('user/uploadAvatar', async (file: File) => {
   const formData = new FormData()
   formData.append('avatar', file)

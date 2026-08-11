@@ -6,7 +6,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { ArrowDownRight, ArrowUpRight, Clock, DollarSign, PieChart as PieIcon, TrendingDown, TrendingUp, Wallet } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
-import { fetchCashBalance, depositCash } from '../store/userSlice'
+import { fetchCashBalance, fetchUserProfile, depositCash } from '../store/userSlice'
 
 interface DepositFormData {
   amount: number
@@ -77,7 +77,7 @@ const formatCrypto = (value: number) =>
 function Portfolio() {
   const { isDarkMode } = useTheme()
   const dispatch = useAppDispatch()
-  const { cashBalance: reduxCashBalance } = useAppSelector((state) => state.user)
+  const { cashBalance: reduxCashBalance, username, profileStatus } = useAppSelector((state) => state.user)
   const cashBalance = reduxCashBalance ?? 0
   const [assets, setAssets] = useState<Asset[]>([])
   const [prices, setPrices] = useState<MarketPrice[]>([])
@@ -116,6 +116,12 @@ function Portfolio() {
 
     fetchPortfolioData()
   }, [])
+
+  useEffect(() => {
+    if (profileStatus === 'idle') {
+      dispatch(fetchUserProfile())
+    }
+  }, [profileStatus, dispatch])
 
   const onDeposit = async (data: DepositFormData) => {
     try {
@@ -230,7 +236,7 @@ function Portfolio() {
         <div>
           <h1 style={{ margin: 0, fontSize: '32px', fontWeight: 900, color: textColor }}>Portfolio</h1>
           <p style={{ margin: '8px 0 0 0', color: mutedColor, fontSize: '14px' }}>
-            Cash, holdings and every simulated buy/sell movement in one place.
+            {username ? `Welcome back, ${username}. ` : ''}Cash, holdings and every simulated buy/sell movement in one place.
           </p>
         </div>
       </div>
