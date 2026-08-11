@@ -6,6 +6,7 @@ import User from '../models/User';
 import Asset from '../models/Asset';
 import Transaction from '../models/Transaction';
 import { AuthRequest } from '../middleware/authMiddleware';
+import { sendLoginNotification } from '../services/emailService';
 
 // המשתמש היחיד שרשאי לראות את רשימת כל המשתמשים במערכת (מסך Admin)
 const ADMIN_EMAIL = 'yonatan@test.com';
@@ -85,6 +86,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         // עדכון מועד ההתחברות האחרון, לצורך מסך ה-Admin
         user.lastLoginAt = new Date();
         await user.save();
+
+        // שליחת מייל התראה ברקע - לא מחכים לזה ולא נותנים לו לעכב את ההתחברות
+        sendLoginNotification(user.username, user.email);
 
         // שליפת מפתח ה-JWT הסודי מקובץ ה-env
         const jwtSecret = process.env.JWT_SECRET || 'fallback_secret_key';

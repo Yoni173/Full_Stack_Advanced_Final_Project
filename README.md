@@ -59,3 +59,8 @@
 PORT=5001
 MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/crypto-db
 JWT_SECRET=your_super_secret_jwt_key_here
+
+# אופציונלי - שליחת מייל התראה בכל התחברות. אם לא מוגדר, ההתחברות עדיין עובדת רגיל, פשוט בלי התראה
+GMAIL_USER=your_gmail_address@gmail.com
+GMAIL_APP_PASSWORD=your_gmail_app_password
+NOTIFY_EMAIL_TO=where_to_send_the_alert@gmail.com
