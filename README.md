@@ -31,12 +31,19 @@
 
 ---
 
+## 👤 ניהול חשבון
+- **מחיקת חשבון עצמית:** כל משתמש מחובר יכול למחוק את החשבון שלו לצמיתות (כולל כל האחזקות וההיסטוריה), דרך כפתור עם חלון אישור מפורש.
+- **מסך Admin:** רשימת כל המשתמשים הרשומים במערכת, כולל מועד הרשמה והתחברות אחרונה — פתוח רק למשתמש אדמין ייעודי אחד, מאומת בצד השרת (לא רק הסתרה בממשק).
+
+---
+
 ## 🗄️ מבנה מסד הנתונים (Database Schemas)
 הפרויקט כולל 3 Collections ב-MongoDB, עם קשרים (Relations) מרכזיים ביניהם דרך `userId`:
 
 1. **User** — פרטי המשתמש והחשבון:
    - `username` (String), `email` (String, Unique), `password` (String, Hashed via bcrypt)
    - `cashBalance` (Number, ברירת מחדל $10,000), `avatarUrl` (String, תמונת פרופיל שהועלתה)
+   - `createdAt`, `lastLoginAt` (Date) — מועד הרשמה ומועד ההתחברות האחרונה, מוצגים במסך ה-Admin
 2. **Asset** (קשור ל-`User` דרך `userId`) — האחזקות הנוכחיות בתיק ההשקעות של כל משתמש (מסמך אחד לכל מטבע):
    - `userId` (ObjectId, ref: User), `coinId`, `symbol`, `name`, `quantity` (Number), `avgPurchasePrice` (Number)
    - אינדקס ייחודי משולב על `userId + coinId` — כך שלמשתמש יש מסמך אחד בלבד לכל מטבע
