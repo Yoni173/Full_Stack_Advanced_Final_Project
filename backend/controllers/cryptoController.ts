@@ -409,7 +409,8 @@ export const getCoinDetails = async (req: Request, res: Response): Promise<void>
 export const getCoinChart = async (req: Request, res: Response): Promise<void> => {
     const { coinId } = req.params;
     const requestedDays = String(req.query.days || '30');
-    const days = ['1', '7', '30', '365', 'max'].includes(requestedDays) ? requestedDays : '30';
+    // 'max' לא נתמך - ה-API החינמי של CoinGecko חוסם היסטוריה מעבר לשנה אחורה
+    const days = ['1', '7', '30', '365'].includes(requestedDays) ? requestedDays : '30';
     const cacheKey = `coin-chart:${coinId}:${days}`;
     const cached = getCachedData(cacheKey);
 

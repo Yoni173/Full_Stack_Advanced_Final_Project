@@ -82,12 +82,12 @@ interface NewsArticle {
   publishedAt: string
 }
 
+// אין אפשרות "All" - ה-API החינמי של CoinGecko חוסם גישה להיסטוריה מעבר לשנה אחורה
 const RANGE_OPTIONS = [
   { label: '24h', value: '1' },
   { label: '7D', value: '7' },
   { label: '1M', value: '30' },
-  { label: '1Y', value: '365' },
-  { label: 'All', value: 'max' }
+  { label: '1Y', value: '365' }
 ]
 
 const formatUsd = (value?: number, digits = 2) => {

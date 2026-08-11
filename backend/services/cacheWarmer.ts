@@ -7,6 +7,10 @@ import { getCachedData, setCachedData } from './apiCache';
 const WARM_INTERVAL_MS = 3 * 60 * 1000;
 const GAP_BETWEEN_COINS_MS = 8000;
 
+// המטבעות שהכי סביר שיוצגו בהדגמה - מקבלים גם חימום של גרף 1Y, שנכשל הכי הרבה בגלל
+// שהוא מבקש הרבה יותר נתונים מ-CoinGecko מאשר טווחים קצרים
+const DEMO_COINS = ['bitcoin', 'ethereum'];
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const warmCoinDetails = async (coinId: string): Promise<void> => {
@@ -30,6 +34,21 @@ const warmCoinDetails = async (coinId: string): Promise<void> => {
     }
 };
 
+const warmCoinChart = async (coinId: string, days: string): Promise<void> => {
+    const cacheKey = `coin-chart:${coinId}:${days}`;
+    if (getCachedData(cacheKey)) return;
+
+    try {
+        const response = await axios.get(`https://api.coingecko.com/api/v3/coins/${coinId}/market_chart`, {
+            timeout: 8000,
+            params: { vs_currency: 'usd', days }
+        });
+        setCachedData(cacheKey, response.data, 10 * 60 * 1000);
+    } catch (err: any) {
+        console.warn(`Cache warmer: failed to warm ${days}d chart for ${coinId}:`, err.message);
+    }
+};
+
 const runWarmCycle = async (): Promise<void> => {
     try {
         const markets = await getMarketData();
@@ -37,6 +56,11 @@ const runWarmCycle = async (): Promise<void> => {
 
         for (const coinId of coinIds) {
             await warmCoinDetails(coinId);
+            await sleep(GAP_BETWEEN_COINS_MS);
+        }
+
+        for (const coinId of DEMO_COINS) {
+            await warmCoinChart(coinId, '365');
             await sleep(GAP_BETWEEN_COINS_MS);
         }
     } catch (err: any) {
